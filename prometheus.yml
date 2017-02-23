@@ -1,0 +1,18 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    cache_dir:
+  tasks:
+
+    - debug:
+        msg: "READY TO ROCK"
+
+    - file:
+        path: "/var/cache/{{ ansible_user }}"
+        state: directory
+
+    - get_url:
+        url: "https://github.com/prometheus/prometheus/releases/download/v1.5.2/prometheus-1.5.2.linux-amd64.tar.gz"
+        dest:
