@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus Node Exporter
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/var/local/prometheus/node_exporter/node_exporter --collector.textfile.directory=/var/local/prometheus/node_exporter/static_export
+User=prometheus
+Group=prometheus
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

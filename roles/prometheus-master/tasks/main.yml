@@ -1,0 +1,51 @@
+---
+- group:
+    name: "{{ prometheus_user }}"
+    system: yes
+
+- user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+    home: "{{ prometheus_deploy_dir }}"
+    createhome: no
+
+- file:
+    path: "{{ prometheus_cache_dir }}"
+    state: directory
+
+- get_url:
+    url: "{{ prometheus_archive_url }}"
+    dest: "{{ prometheus_cache_dir }}/{{ prometheus_archive_name }}"
+
+- unarchive:
+    src: "{{ cache_dir }}/{{ prometheus_archive_name }}"
+    dest: "{{ prometheus_unarchive_dir }}/"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+    copy: no
+
+- file:
+    src: "{{ prometheus_unarchive_dir }}/prometheus-{{ prometheus_version }}.linux-amd64"
+    state: link
+    dest: "{{ prometheus_deploy_dir }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
+
+- template:
+    src: prometheus.service.j2
+    dest: /usr/lib/systemd/system/prometheus.service
+  register: prometheus_service
+
+- shell: >
+    systemctl daemon-reload
+  when: "{{ prometheus_service|changed }}"
+
+- template:
+    src: prometheus.yml.j2
+    dest: /var/local/prometheus/current/prometheus.yml
+  notify: restart prometheus
+
+- service:
+    name: prometheus
+    state: started
+    enabled: yes

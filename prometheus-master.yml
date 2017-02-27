@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    ansible_cache_dir: "/var/cache/{{ ansible_user }}"
+
+  pre_tasks:
+    - file:
+        path: "{{ ansible_cache_dir }}"
+        state: directory
+
+  roles:
+    - grafana
+

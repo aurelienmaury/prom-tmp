@@ -1,0 +1,59 @@
+---
+- file:
+    path: "{{ prometheus_cache_dir }}"
+    state: directory
+
+- get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v0.13.0/node_exporter-0.13.0.linux-amd64.tar.gz"
+    dest: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
+
+- group:
+    name: prometheus
+    system: yes
+
+- user:
+    name: prometheus
+    group: prometheus
+    home: /var/local/prometheus
+    createhome: yes
+##################
+
+- yum:
+    name: unzip
+    state: latest
+
+- unarchive:
+    src: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
+    dest: "/var/local/prometheus"
+    owner: prometheus
+    group: prometheus
+    copy: no
+
+- file:
+    src: "/var/local/prometheus/node_exporter-0.13.0.linux-amd64"
+    dest: "/var/local/prometheus/node_exporter"
+    state: link
+    owner: prometheus
+    group: prometheus
+
+- template:
+    src: templates/node_exporter.service.j2
+    dest: /usr/lib/systemd/system/node_exporter.service
+  register: node_exporter_service
+
+- shell: >
+    systemctl daemon-reload
+  when: node_exporter_service|changed
+
+
+
+- file:
+    path: "/var/local/prometheus/node_exporter/static_export"
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+- copy:
+    dest: /var/local/prometheus/node_exporter/static_export/role.prom
+    content: >
+      role{role="application_server"} 1

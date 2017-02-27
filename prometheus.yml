@@ -3,16 +3,149 @@
   become: yes
 
   vars:
-    cache_dir:
+    prometheus_version: "1.5.2"
+    cache_dir: "/var/cache/{{ ansible_user }}"
+    prometheus_archive_name: "prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+
   tasks:
 
     - debug:
         msg: "READY TO ROCK"
 
     - file:
-        path: "/var/cache/{{ ansible_user }}"
+        path: "{{ cache_dir }}"
         state: directory
 
     - get_url:
-        url: "https://github.com/prometheus/prometheus/releases/download/v1.5.2/prometheus-1.5.2.linux-amd64.tar.gz"
-        dest:
+        url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/{{ prometheus_archive_name}}"
+        dest: "{{ cache_dir }}/{{ prometheus_archive_name }}"
+
+    - get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v0.13.0/node_exporter-0.13.0.linux-amd64.tar.gz"
+        dest: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
+
+    - group:
+        name: prometheus
+        system: yes
+
+    - user:
+        name: prometheus
+        group: prometheus
+        home: /var/local/prometheus
+        createhome: yes
+
+    - unarchive:
+        src: "{{ cache_dir }}/{{ prometheus_archive_name }}"
+        dest: "/var/local/prometheus"
+        owner: prometheus
+        group: prometheus
+        copy: no
+
+    - file:
+        src: "/var/local/prometheus/prometheus-1.5.2.linux-amd64"
+        dest: "/var/local/prometheus/current"
+        state: link
+        owner: prometheus
+        group: prometheus
+
+    - template:
+        src: templates/prometheus.service.j2
+        dest: /usr/lib/systemd/system/prometheus.service
+      register: prom_service
+
+    - shell: >
+        systemctl daemon-reload
+      when: prom_service|changed
+
+    - template:
+        src: templates/prometheus.yml.j2
+        dest: /var/local/prometheus/current/prometheus.yml
+
+    - service:
+        name: prometheus
+        state: restarted
+        enabled: yes
+
+##################
+
+    - yum:
+        name: unzip
+        state: latest
+
+    - unarchive:
+        src: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
+        dest: "/var/local/prometheus"
+        owner: prometheus
+        group: prometheus
+        copy: no
+
+    - file:
+        src: "/var/local/prometheus/node_exporter-0.13.0.linux-amd64"
+        dest: "/var/local/prometheus/node_exporter"
+        state: link
+        owner: prometheus
+        group: prometheus
+
+    - template:
+        src: templates/node_exporter.service.j2
+        dest: /usr/lib/systemd/system/node_exporter.service
+      register: node_exporter_service
+
+    - shell: >
+        systemctl daemon-reload
+      when: node_exporter_service|changed
+
+
+
+##############
+
+    - get_url:
+        url: "https://grafanarel.s3.amazonaws.com/builds/grafana-4.1.2-1486989747.linux-x64.tar.gz"
+        dest: "{{ cache_dir }}/grafana-4.1.2-1486989747.linux-x64.tar.gz"
+
+    - unarchive:
+        src: "{{ cache_dir }}/grafana-4.1.2-1486989747.linux-x64.tar.gz"
+        dest: "/var/local/prometheus"
+        owner: prometheus
+        group: prometheus
+        copy: no
+    - shell: >
+        chown prometheus:prometheus /var/local/prometheus/grafana-4.1.2-1486989747 -R
+
+    - file:
+        src: "/var/local/prometheus/grafana-4.1.2-1486989747"
+        dest: "/var/local/prometheus/grafana"
+        state: link
+        owner: prometheus
+        group: prometheus
+
+    - file:
+        path: "/var/local/prometheus/node_exporter/static_export"
+        state: directory
+        owner: prometheus
+        group: prometheus
+
+    - copy:
+        dest: /var/local/prometheus/node_exporter/static_export/role.prom
+        content: >
+          role{role="application_server"} 1
+
+    - template:
+        src: templates/grafana.service.j2
+        dest: /usr/lib/systemd/system/grafana.service
+      register: grafana_service
+
+    - shell: >
+        systemctl daemon-reload
+      when: grafana_service|changed
+
+    - service:
+        name: grafana
+        state: restarted
+        enabled: yes
+    - service:
+        name: node_exporter
+        state: restarted
+        enabled: yes
+
+   #  sum by (instance)(irate(node_cpu{job="by_host",mode=~"^(system|user)$"}[5m])) * on (instance) group_right(host,chassis,machineid,bootid,os,kernel,arch) host
