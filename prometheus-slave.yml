@@ -11,7 +11,5 @@
         state: directory
 
   roles:
-    - grafana
-    - prometheus-master
     - prometheus-node
 

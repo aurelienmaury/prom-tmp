@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
           "all_groups:children" => ["prom"]
       }
       ansible.playbook = "prometheus-master.yml"
-    ansible.raw_arguments = ["-vvv"]
+#    ansible.raw_arguments = ["-vvv"]
     end
   end
 

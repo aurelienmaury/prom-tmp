@@ -4,7 +4,7 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
-ExecStart=/var/local/prometheus/node_exporter/node_exporter --collector.textfile.directory=/var/local/prometheus/node_exporter/static_export
+ExecStart={{ node_exporter_deploy_dir }}/node_exporter --collector.textfile.directory={{ node_exporter_deploy_dir }}/txt
 User=prometheus
 Group=prometheus
 Restart=always

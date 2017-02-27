@@ -20,6 +20,7 @@
     owner: "{{ grafana_user }}"
     group: "{{ grafana_user }}"
     copy: no
+    creates: "{{ grafana_unarchive_creates }}"
 
 - name: enforcing ownership on {{ grafana_unarchive_dir }}/grafana-{{ grafana_version }}
   file:
@@ -44,9 +45,10 @@
 - shell: >
     systemctl daemon-reload
   when: grafana_service|changed
+  notify: restart grafana
 
 - service:
     name: grafana
-    state: restarted
+    state: started
     enabled: yes
 

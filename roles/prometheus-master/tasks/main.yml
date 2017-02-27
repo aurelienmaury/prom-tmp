@@ -9,20 +9,18 @@
     home: "{{ prometheus_deploy_dir }}"
     createhome: no
 
-- file:
-    path: "{{ prometheus_cache_dir }}"
-    state: directory
-
 - get_url:
     url: "{{ prometheus_archive_url }}"
     dest: "{{ prometheus_cache_dir }}/{{ prometheus_archive_name }}"
+    sha256sum: "{{ prometheus_archive_sum[prometheus_version] }}"
 
 - unarchive:
-    src: "{{ cache_dir }}/{{ prometheus_archive_name }}"
+    src: "{{ ansible_cache_dir }}/{{ prometheus_archive_name }}"
     dest: "{{ prometheus_unarchive_dir }}/"
     owner: "{{ prometheus_user }}"
     group: "{{ prometheus_user }}"
     copy: no
+    creates: "{{ prometheus_unarchive_creates }}"
 
 - file:
     src: "{{ prometheus_unarchive_dir }}/prometheus-{{ prometheus_version }}.linux-amd64"
@@ -39,10 +37,13 @@
 - shell: >
     systemctl daemon-reload
   when: "{{ prometheus_service|changed }}"
+  notify: restart prometheus
 
 - template:
     src: prometheus.yml.j2
-    dest: /var/local/prometheus/current/prometheus.yml
+    dest: "{{ prometheus_deploy_dir }}/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_user }}"
   notify: restart prometheus
 
 - service:

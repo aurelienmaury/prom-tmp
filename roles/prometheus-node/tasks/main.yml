@@ -1,59 +1,50 @@
 ---
-- file:
-    path: "{{ prometheus_cache_dir }}"
-    state: directory
-
-- get_url:
-    url: "https://github.com/prometheus/node_exporter/releases/download/v0.13.0/node_exporter-0.13.0.linux-amd64.tar.gz"
-    dest: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
-
 - group:
-    name: prometheus
+    name: "{{ node_exporter_user }}"
     system: yes
 
 - user:
-    name: prometheus
-    group: prometheus
-    home: /var/local/prometheus
-    createhome: yes
-##################
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+    home: "{{ node_exporter_deploy_dir }}"
+    createhome: no
 
-- yum:
-    name: unzip
-    state: latest
+- get_url:
+    url: "{{ node_exporter_archive_url }}"
+    dest: "{{ ansible_cache_dir }}/{{ node_exporter_archive_name }}"
+    sha256sum: "{{ node_exporter_archive_sum[node_exporter_version] }}"
 
 - unarchive:
-    src: "{{ cache_dir }}/node_exporter-0.13.0.linux-amd64.tar.gz"
-    dest: "/var/local/prometheus"
-    owner: prometheus
-    group: prometheus
+    src: "{{ ansible_cache_dir }}/{{ node_exporter_archive_name }}"
+    dest: "{{ node_exporter_unarchive_dir }}/"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
     copy: no
 
 - file:
-    src: "/var/local/prometheus/node_exporter-0.13.0.linux-amd64"
-    dest: "/var/local/prometheus/node_exporter"
+    src: "{{ node_exporter_unarchive_dir }}/node_exporter-{{ node_exporter_version }}.linux-amd64"
     state: link
-    owner: prometheus
-    group: prometheus
+    dest: "{{ node_exporter_deploy_dir }}"
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
 
 - template:
-    src: templates/node_exporter.service.j2
+    src: node_exporter.service.j2
     dest: /usr/lib/systemd/system/node_exporter.service
   register: node_exporter_service
 
 - shell: >
     systemctl daemon-reload
-  when: node_exporter_service|changed
+  when: "{{ node_exporter_service|changed }}"
+  notify: restart node_exporter
 
-
+- service:
+    name: node_exporter
+    state: started
+    enabled: yes
 
 - file:
-    path: "/var/local/prometheus/node_exporter/static_export"
+    path: "{{ node_exporter_deploy_dir }}/txt"
     state: directory
-    owner: prometheus
-    group: prometheus
-
-- copy:
-    dest: /var/local/prometheus/node_exporter/static_export/role.prom
-    content: >
-      role{role="application_server"} 1
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
