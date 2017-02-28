@@ -16,6 +16,7 @@ scrape_configs:
     static_configs:
       - targets:
         - 'localhost:9090'
+        - 'localhost:9100'
 {% if prometheus_node_list %}
   - job_name: 'nodes'
     static_configs:
@@ -24,5 +25,5 @@ scrape_configs:
       - '{{ node }}:9100'
 {% endfor %}
     - labels:
-        host: my_host
+        type: node
 {% endif %}

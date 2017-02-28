@@ -151,3 +151,8 @@
 
 
 sum by (instance) (irate (node_cpu { job="nodes", mode=~"^(system|user)$" } [5m] )) * on (instance) group_right(hostname) host
+
+sum (irate (node_cpu { job="nodes", mode=~"^(system|user)$" } [5m] )) by (role{role="bdd"})
+
+### AWARd WINNING ###
+sum by (instance, role) (irate (node_cpu { mode=~"^(idle)$" } [5m] )) * on (instance) group_left (role) role{role="app"}
