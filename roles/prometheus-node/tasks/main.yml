@@ -48,3 +48,11 @@
     state: directory
     owner: "{{ node_exporter_user }}"
     group: "{{ node_exporter_user }}"
+
+- copy:
+    dest: "{{ node_exporter_deploy_dir }}/txt/host.prom"
+    content: |
+      host{hostname="{{ ansible_hostname }}"} 1
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_user }}"
+  notify: restart node_exporter

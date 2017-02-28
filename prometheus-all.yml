@@ -1,0 +1,44 @@
+---
+###############################################################################
+
+- hosts: slaves
+  become: yes
+
+  vars:
+    ansible_cache_dir: "/var/cache/{{ ansible_user }}"
+
+  pre_tasks:
+    - file:
+        path: "{{ ansible_cache_dir }}"
+        state: directory
+
+  roles:
+    - prometheus-node
+
+###############################################################################
+
+- hosts: master
+  become: yes
+
+  vars:
+    ansible_cache_dir: "/var/cache/{{ ansible_user }}"
+
+  pre_tasks:
+    - file:
+        path: "{{ ansible_cache_dir }}"
+        state: directory
+
+    - set_fact:
+        node_list: "{{ (node_list|default([])) + [hostvars[item].ansible_eth1.ipv4.address] }}"
+      with_items: "{{ groups['slaves'] }}"
+
+  roles:
+    - role: prometheus-master
+      vars:
+        prometheus_node_list: "{{ node_list }}"
+    - role: grafana
+    - role: prometheus-node
+
+###############################################################################
+
+

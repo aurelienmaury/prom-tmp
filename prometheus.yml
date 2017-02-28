@@ -148,4 +148,6 @@
         state: restarted
         enabled: yes
 
-   #  sum by (instance)(irate(node_cpu{job="by_host",mode=~"^(system|user)$"}[5m])) * on (instance) group_right(host,chassis,machineid,bootid,os,kernel,arch) host
+
+
+sum by (instance) (irate (node_cpu { job="nodes", mode=~"^(system|user)$" } [5m] )) * on (instance) group_right(hostname) host
