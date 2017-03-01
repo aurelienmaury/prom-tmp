@@ -1,0 +1,32 @@
+---
+###############################################################################
+
+- hosts: slaves
+  become: yes
+
+  vars:
+    ansible_cache_dir: "/var/cache/{{ ansible_user }}"
+
+  pre_tasks:
+    - file:
+        path: "{{ ansible_cache_dir }}"
+        state: directory
+
+  tasks:
+    - copy:
+        dest: /opt/node_exporter/txt/id.prom
+        content: >
+          host_id{
+          app="demo",
+          os="{{ ansible_distribution|lower }}",
+          dns="{{ ansible_dns.nameservers|join(' ') }}",
+          {% if ansible_eth2 is defined %}eth2="{{ ansible_eth0.ipv4.address }}",{% endif %}
+          eth0="{{ ansible_eth0.ipv4.address }}",
+          eth1="{{ ansible_eth1.ipv4.address }}"
+          } 1
+        owner: node_exporter
+        group: node_exporter
+
+    - service:
+        name: node_exporter
+        state: restarted

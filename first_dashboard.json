@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_PROM",
-      "label": "PROM",
+      "name": "DS_LOCAL",
+      "label": "LOCAL",
       "description": "",
       "type": "datasource",
       "pluginId": "prometheus",
@@ -38,17 +38,17 @@
   "annotations": {
     "list": []
   },
-  "editMode": false,
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
   "hideControls": false,
   "id": null,
   "links": [],
+  "refresh": "30s",
   "rows": [
     {
       "collapse": false,
-      "height": "250px",
+      "height": 243,
       "panels": [
         {
           "cacheTimeout": null,
@@ -59,7 +59,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "datasource": "${DS_PROM}",
+          "datasource": "${DS_LOCAL}",
           "format": "none",
           "gauge": {
             "maxValue": 100,
@@ -103,7 +103,7 @@
               "to": "null"
             }
           ],
-          "span": 6,
+          "span": 1,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -112,10 +112,10 @@
           },
           "targets": [
             {
-              "expr": "sum(role{role=\"app\"})",
+              "expr": "sum (host)",
               "intervalFactor": 2,
               "refId": "A",
-              "step": 600
+              "step": 20
             }
           ],
           "thresholds": "",
@@ -134,16 +134,15 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": "${DS_PROM}",
+          "datasource": "${DS_LOCAL}",
           "fill": 1,
-          "id": 2,
+          "id": 3,
           "legend": {
-            "alignAsTable": false,
             "avg": false,
             "current": false,
             "max": false,
             "min": false,
-            "show": true,
+            "show": false,
             "total": false,
             "values": false
           },
@@ -156,17 +155,90 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 4,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (instance, role) (irate (node_cpu { mode=~\"^(user|system)$\" } [5m] )) * on (instance) group_left (role) role{role=\"app\"}",
+              "expr": "100 - sum by (instance) (100 * node_memory_MemFree / node_memory_MemTotal)",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{ instance }}",
+              "refId": "A",
+              "step": 4
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Memory usage",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": "% usage",
+              "logBase": 1,
+              "max": "100",
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": "${DS_LOCAL}",
+          "fill": 1,
+          "id": 2,
+          "legend": {
+            "alignAsTable": false,
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 7,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "100 - (avg by (instance) (irate(node_cpu{mode=\"idle\"}[1m])) * 100)",
               "interval": "",
               "intervalFactor": 2,
               "legendFormat": "{{instance}}",
               "refId": "A",
-              "step": 60
+              "step": 2
             }
           ],
           "thresholds": [],
@@ -188,10 +260,10 @@
           "yaxes": [
             {
               "format": "short",
-              "label": null,
+              "label": "% usage",
               "logBase": 1,
-              "max": null,
-              "min": null,
+              "max": "100",
+              "min": "0",
               "show": true
             },
             {
@@ -208,8 +280,8 @@
       "repeat": null,
       "repeatIteration": null,
       "repeatRowId": null,
-      "showTitle": false,
-      "title": "Dashboard Row",
+      "showTitle": true,
+      "title": "General",
       "titleSize": "h6"
     }
   ],
@@ -220,7 +292,7 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -250,5 +322,5 @@
   },
   "timezone": "browser",
   "title": "APP_COUNTER",
-  "version": 2
+  "version": 10
 }

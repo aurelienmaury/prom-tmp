@@ -15,15 +15,14 @@ scrape_configs:
   - job_name: 'self'
     static_configs:
       - targets:
-        - 'localhost:9090'
         - 'localhost:9100'
 {% if prometheus_node_list %}
   - job_name: 'nodes'
     static_configs:
-    - targets:
+      - targets:
 {% for node in prometheus_node_list %}
-      - '{{ node }}:9100'
+          - '{{ node }}:9100'
 {% endfor %}
-    - labels:
-        type: node
+      - labels:
+          type: node
 {% endif %}
